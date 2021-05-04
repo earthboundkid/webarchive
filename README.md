@@ -15,4 +15,17 @@ GOBIN="$(pwd)" go install github.com/carlmjohnson/webarchive@latest
 ## Screenshots
 
 ```
+$ webarchive -h
+webarchive - Look up WayBack Machine address for URL.
+
+Usage:
+
+        webarchive [options]
+
+Options:
+  -timeout duration
+        connection time out (default 10s)
+
+$ webarchive https://example.com
+https://web.archive.org/web/20210504155907/https://example.com/
 ```

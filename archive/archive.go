@@ -1,13 +1,16 @@
 package archive
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"io"
-	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/carlmjohnson/flagext"
+	"golang.org/x/term"
 )
 
 const AppName = "webarchive"
@@ -26,12 +29,7 @@ func CLI(args []string) error {
 
 func (app *appEnv) ParseArgs(args []string) error {
 	fl := flag.NewFlagSet(AppName, flag.ContinueOnError)
-	src := flagext.FileOrURL(flagext.StdIO, nil)
-	app.src = src
-	fl.Var(src, "src", "source file or URL")
-	app.Logger = log.New(nil, AppName+" ", log.LstdFlags)
-	flagext.LoggerVar(
-		fl, app.Logger, "verbose", flagext.LogVerbose, "log debug output")
+	fl.DurationVar(&http.DefaultClient.Timeout, "timeout", 10*time.Second, "connection time out")
 	fl.Usage = func() {
 		fmt.Fprintf(fl.Output(), `webarchive - Look up WayBack Machine address for URL.
 
@@ -50,26 +48,47 @@ Options:
 	if err := flagext.ParseEnv(fl, AppName); err != nil {
 		return err
 	}
+	if err := flagext.MustHaveArgs(fl, 1, -1); err != nil {
+		return err
+	}
+	app.urls = fl.Args()
 	return nil
 }
 
 type appEnv struct {
-	src io.ReadCloser
-	*log.Logger
+	urls []string
 }
 
 func (app *appEnv) Exec() (err error) {
-	app.Println("starting")
-	defer func() { app.Println("done") }()
-
-	n, err := io.Copy(os.Stdout, app.src)
-	defer func() {
-		e2 := app.src.Close()
-		if err == nil {
-			err = e2
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	for i, url := range app.urls {
+		if i > 0 {
+			fmt.Println()
 		}
-	}()
-	app.Printf("copied %d bytes\n", n)
+		if err := app.lookup(ctx, url); err != nil {
+			return err
+		}
+	}
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		fmt.Println()
+	}
+	return nil
+}
 
-	return err
+func (app *appEnv) lookup(ctx context.Context, u string) (err error) {
+	u = "https://web.archive.org/" + u
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status for %q: %s", u, res.Status)
+	}
+	fmt.Print(res.Request.URL)
+	return nil
 }
