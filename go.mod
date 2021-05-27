@@ -5,5 +5,6 @@ go 1.16
 require (
 	github.com/carlmjohnson/exitcode v0.20.2
 	github.com/carlmjohnson/flagext v0.21.0
+	github.com/carlmjohnson/requests v0.21.5
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
 )

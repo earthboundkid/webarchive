@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/carlmjohnson/flagext"
+	"github.com/carlmjohnson/requests"
 	"golang.org/x/term"
 )
 
@@ -77,18 +78,18 @@ func (app *appEnv) Exec() (err error) {
 }
 
 func (app *appEnv) lookup(ctx context.Context, u string) (err error) {
-	u = "https://web.archive.org/" + u
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return err
+	if err = requests.
+		URL("https://web.archive.org").
+		Path(u).
+		Handle(func(res *http.Response) error {
+			fmt.Print(res.Request.URL)
+			return nil
+		}).
+		Fetch(ctx); err != nil {
+		if requests.HasStatusErr(err, http.StatusNotFound) {
+			return fmt.Errorf("could not find %q in WayBack machine", u)
+		}
+		return fmt.Errorf("problem connecting to WayBack machine: %w", err)
 	}
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status for %q: %s", u, res.Status)
-	}
-	fmt.Print(res.Request.URL)
 	return nil
 }
