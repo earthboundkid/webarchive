@@ -31,6 +31,7 @@ func CLI(args []string) error {
 func (app *appEnv) ParseArgs(args []string) error {
 	fl := flag.NewFlagSet(AppName, flag.ContinueOnError)
 	fl.DurationVar(&http.DefaultClient.Timeout, "timeout", 10*time.Second, "connection time out")
+	fl.StringVar(&app.from, "from", "", "date to search from in YYYYMMDD format")
 	fl.Usage = func() {
 		fmt.Fprintf(fl.Output(), `webarchive - Look up WayBack Machine address for URL.
 
@@ -58,6 +59,7 @@ Options:
 
 type appEnv struct {
 	urls []string
+	from string
 }
 
 func (app *appEnv) Exec() (err error) {
@@ -78,18 +80,35 @@ func (app *appEnv) Exec() (err error) {
 }
 
 func (app *appEnv) lookup(ctx context.Context, u string) (err error) {
-	if err = requests.
-		URL("https://web.archive.org").
-		Path(u).
-		Handle(func(res *http.Response) error {
-			fmt.Print(res.Request.URL)
-			return nil
-		}).
+	rb := requests.
+		URL("https://web.archive.org/cdx/search/cdx?output=json&limit=1").
+		Param("url", u)
+	if app.from != "" {
+		rb.Param("from", app.from)
+	}
+	var rows [][]string
+	if err = rb.
+		ToJSON(&rows).
 		Fetch(ctx); err != nil {
 		if requests.HasStatusErr(err, http.StatusNotFound) {
 			return fmt.Errorf("could not find %q in WayBack machine", u)
 		}
 		return fmt.Errorf("problem connecting to WayBack machine: %w", err)
 	}
+	if len(rows) < 2 || len(rows[0]) != len(rows[1]) {
+		return fmt.Errorf("bad response from WayBack machine: %q", rows)
+	}
+	tsIndex := -1
+	for i, v := range rows[0] {
+		if v == "timestamp" {
+			tsIndex = i
+			break
+		}
+	}
+	if tsIndex == -1 {
+		return fmt.Errorf("bad response from WayBack machine: %q", rows)
+	}
+	fmt.Printf("https://web.archive.org/%s/%s\n",
+		rows[1][tsIndex], u)
 	return nil
 }
