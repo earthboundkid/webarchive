@@ -108,7 +108,7 @@ func (app *appEnv) lookup(ctx context.Context, u string) (err error) {
 	if tsIndex == -1 {
 		return fmt.Errorf("bad response from WayBack machine: %q", rows)
 	}
-	fmt.Printf("https://web.archive.org/%s/%s\n",
+	fmt.Printf("https://web.archive.org/%s/%s",
 		rows[1][tsIndex], u)
 	return nil
 }
