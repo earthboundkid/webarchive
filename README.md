@@ -1,4 +1,4 @@
-# go-cli [![GoDoc](https://godoc.org/github.com/carlmjohnson/webarchive?status.svg)](https://godoc.org/github.com/carlmjohnson/webarchive) [![Go Report Card](https://goreportcard.com/badge/github.com/carlmjohnson/webarchive)](https://goreportcard.com/report/github.com/carlmjohnson/webarchive)
+# webarchive [![GoDoc](https://godoc.org/github.com/carlmjohnson/webarchive?status.svg)](https://godoc.org/github.com/carlmjohnson/webarchive) [![Go Report Card](https://goreportcard.com/badge/github.com/carlmjohnson/webarchive)](https://goreportcard.com/report/github.com/carlmjohnson/webarchive)
 
 Look up WayBack Machine address for URL.
 
