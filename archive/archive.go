@@ -23,6 +23,9 @@ func CLI(args []string) error {
 		return err
 	}
 	if err = app.Exec(); err != nil {
+		if len(app.urls) > 0 {
+			fmt.Print(app.urls[0])
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 	return err
