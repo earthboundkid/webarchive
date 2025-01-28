@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/carlmjohnson/exitcode"
-	"github.com/carlmjohnson/webarchive/archive"
+	"github.com/earthboundkid/webarchive/archive"
 )
 
 func main() {
